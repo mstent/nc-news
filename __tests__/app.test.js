@@ -70,14 +70,12 @@ describe("GET /api/articles/:article_id", () => {
     });
     test("status: 400, returns status error and msg if given parameter is not a number", () => {
         const notANumber = "string";
-        return (
-            request(app)
-                .get(`/api/articles/${notANumber}`)
-                .expect(400)
-                .then(({ body }) => {
-                    expect(body.msg).toBe("ERROR: bad request");
-                })
-        );
+        return request(app)
+            .get(`/api/articles/${notANumber}`)
+            .expect(400)
+            .then(({ body }) => {
+                expect(body.msg).toBe("ERROR: bad request");
+            });
     });
     test("status: 404, returns status error and msg if given parameter does not equal an article_id in the database", () => {
         const nonExistantArticleId = 543;
@@ -88,6 +86,29 @@ describe("GET /api/articles/:article_id", () => {
                 expect(body.msg).toBe(
                     `ERROR: article *${nonExistantArticleId}* does not exist`
                 );
+            });
+    });
+});
+
+describe("GET /api/articles", () => {
+    test("status: 200, returns an array of all article objects orderd by date", () => {
+        return request(app)
+            .get("/api/articles")
+            .expect(200)
+            .then(({ body }) => {
+                expect(body.articles.length).toBe(13);
+                expect(body.articles).toBeSortedBy('created_at', {descending: true});
+                body.articles.forEach((article) => {
+                    expect(article).toHaveProperty("author");
+                    expect(article).toHaveProperty("title");
+                    expect(article).toHaveProperty("article_id");
+                    expect(article).toHaveProperty("topic");
+                    expect(article).toHaveProperty("created_at");
+                    expect(article).toHaveProperty("votes");
+                    expect(article).toHaveProperty("article_img_url");
+                    expect(article).toHaveProperty("comment_count");
+                    expect(article).not.toHaveProperty('body');
+                });
             });
     });
 });
