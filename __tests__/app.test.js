@@ -36,10 +36,58 @@ describe("GET /api", () => {
             .get("/api")
             .expect(200)
             .then(({ body }) => {
-                fs.readFile(`${__dirname}/../endpoints.json`, 'utf-8')
-                .then((expectedObject) => {
-                    expect(body.endpoints).toEqual(JSON.parse(expectedObject));
+                fs.readFile(`${__dirname}/../endpoints.json`, "utf-8").then(
+                    (expectedObject) => {
+                        expect(body.endpoints).toEqual(
+                            JSON.parse(expectedObject)
+                        );
+                    }
+                );
+            });
+    });
+});
+
+describe("GET /api/articles/:article_id", () => {
+    test("status: 200, returns correct article object from given article_id parameter", () => {
+        const givenParameter = 3;
+
+        return request(app)
+            .get(`/api/articles/${givenParameter}`)
+            .expect(200)
+            .then(({ body }) => {
+                expect(body.article).toHaveProperty(
+                    "article_id",
+                    givenParameter // checks the recieved article_id is the given parameter.
+                );
+                expect(body.article).toHaveProperty("author");
+                expect(body.article).toHaveProperty("title");
+                expect(body.article).toHaveProperty("body");
+                expect(body.article).toHaveProperty("topic");
+                expect(body.article).toHaveProperty("created_at");
+                expect(body.article).toHaveProperty("votes");
+                expect(body.article).toHaveProperty("article_img_url");
+            });
+    });
+    test("status: 400, returns status error and msg if given parameter is not a number", () => {
+        const notANumber = "string";
+        return (
+            request(app)
+                .get(`/api/articles/${notANumber}`)
+                .expect(400)
+                .then(({ body }) => {
+                    expect(body.msg).toBe("ERROR: bad request");
                 })
+        );
+    });
+    test("status: 404, returns status error and msg if given parameter does not equal an article_id in the database", () => {
+        const nonExistantArticleId = 543;
+        return request(app)
+            .get(`/api/articles/${nonExistantArticleId}`)
+            .expect(404)
+            .then(({ body }) => {
+                expect(body.msg).toBe(
+                    `ERROR: article *${nonExistantArticleId}* does not exist`
+                );
             });
     });
 });
