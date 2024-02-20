@@ -97,7 +97,9 @@ describe("GET /api/articles", () => {
             .expect(200)
             .then(({ body }) => {
                 expect(body.articles.length).toBe(13);
-                expect(body.articles).toBeSortedBy('created_at', {descending: true});
+                expect(body.articles).toBeSortedBy("created_at", {
+                    descending: true,
+                });
                 body.articles.forEach((article) => {
                     expect(article).toHaveProperty("author");
                     expect(article).toHaveProperty("title");
@@ -107,8 +109,74 @@ describe("GET /api/articles", () => {
                     expect(article).toHaveProperty("votes");
                     expect(article).toHaveProperty("article_img_url");
                     expect(article).toHaveProperty("comment_count");
-                    expect(article).not.toHaveProperty('body');
+                    expect(article).not.toHaveProperty("body");
                 });
+            });
+    });
+});
+
+describe("GET /api/articles/:article_id/comments", () => {
+    test("status: 200, returns array of comments for given article_id parameter", () => {
+        const givenParameter = 3;
+        const numOfCommentsForParameter = 2;
+
+        return request(app)
+            .get(`/api/articles/${givenParameter}/comments`)
+            .expect(200)
+            .then(({ body }) => {
+                expect(Array.isArray(body.comments)).toBe(true);
+                expect(body.comments).toHaveLength(numOfCommentsForParameter);
+                body.comments.forEach((comment) => {
+                    expect(typeof comment.comment_id).toBe("number");
+                    expect(typeof comment.votes).toBe("number");
+                    expect(typeof comment.created_at).toBe("string");
+                    expect(typeof comment.author).toBe("string");
+                    expect(typeof comment.body).toBe("string");
+                    expect(typeof comment.article_id).toBe("number");
+                });
+            });
+    });
+    test("returned comments should be served in order of most recent", () => {
+        const article_id = 1;
+
+        return request(app)
+            .get(`/api/articles/${article_id}/comments`)
+            .then(({ body }) => {
+                expect(body.comments).toBeSortedBy("created_at", {
+                    descending: true,
+                });
+            });
+    });
+    test("status: 200, returns an empty array if there are no comments for a given article", () => {
+        const articleWithNoComments = 2;
+
+        return request(app)
+            .get(`/api/articles/${articleWithNoComments}/comments`)
+            .expect(200)
+            .then(({ body }) => {
+                expect(body.comments).toEqual([]);
+            });
+    });
+    test("status: 404, returns error status and msg if given article_id is not in database", () => {
+        const nonExistantId = 543;
+
+        return request(app)
+            .get(`/api/articles/${nonExistantId}/comments`)
+            .expect(404)
+            .then(({ body }) => {
+                expect(body.msg).toBe(
+                    `ERROR: article *${nonExistantId}* does not exist`
+                );
+            });
+    });
+    test("status: 400, returns an error status and msg if given article_id is not a number", () => {
+        const notANumber = "string";
+
+        return request(app)
+            .get(`/api/articles/${notANumber}/comments`)
+            .expect(400)
+            .then(({ body }) => {
+                expect(body.msg).toBe("ERROR: bad request");
             });
     });
 });
