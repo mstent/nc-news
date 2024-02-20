@@ -9,3 +9,15 @@ exports.selectCommentsByArticleId = (article_id) => {
             return databaseQuery.rows;
         })
 }
+
+exports.insertComment = (body, username, article_id) => {
+    return db.query(`
+        INSERT INTO comments
+        (body, article_id, author)
+        VALUES ($1, $2, $3)
+        RETURNING *`,
+        [body, article_id, username])
+        .then((databaseInsert) => {
+            return databaseInsert.rows[0];
+        })
+}
