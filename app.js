@@ -9,7 +9,7 @@ const {
     getArticles,
 } = require(`${__dirname}/controllers/articles.controllers`);
 const {
-    getCommentsByArticleId,
+    getCommentsByArticleId, postComment
 } = require(`${__dirname}/controllers/comments.controllers`);
 
 app.use(express.json());
@@ -19,6 +19,7 @@ app.get("/api", getEndpoints);
 app.get("/api/articles", getArticles);
 app.get("/api/articles/:article_id", getArticleById);
 app.get("/api/articles/:article_id/comments", getCommentsByArticleId);
+app.post("/api/articles/:article_id/comments", postComment)
 
 app.use((err, req, res, next) => {
     if (err.code === "22P02") {
@@ -26,6 +27,12 @@ app.use((err, req, res, next) => {
     }
     next(err);
 });
+app.use((err, req, res, next) => {
+    if (err.code === "23503") {
+        res.status(404).send({msg: 'ERROR: article does not exist'})
+    }
+    next(err);
+})
 
 app.use((err, req, res, next) => {
     if (err.status && err.msg) {

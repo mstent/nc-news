@@ -157,6 +157,16 @@ describe("GET /api/articles/:article_id/comments", () => {
                 expect(body.comments).toEqual([]);
             });
     });
+    test("status: 400, returns an error status and msg if given article_id is not a number", () => {
+        const notANumber = "string";
+
+        return request(app)
+            .get(`/api/articles/${notANumber}/comments`)
+            .expect(400)
+            .then(({ body }) => {
+                expect(body.msg).toBe("ERROR: bad request");
+            });
+    });
     test("status: 404, returns error status and msg if given article_id is not in database", () => {
         const nonExistantId = 543;
 
@@ -169,14 +179,85 @@ describe("GET /api/articles/:article_id/comments", () => {
                 );
             });
     });
-    test("status: 400, returns an error status and msg if given article_id is not a number", () => {
-        const notANumber = "string";
+});
+
+describe("POST /api/articles/:article_id/comments", () => {
+    test("status: 201, adds new post to database and returns posted object", () => {
+        const articleId = 2;
+        const postReq = {
+            username: "lurker",
+            body: "I agree with this article.",
+        };
 
         return request(app)
-            .get(`/api/articles/${notANumber}/comments`)
+            .post(`/api/articles/${articleId}/comments`)
+            .send(postReq)
+            .expect(201)
+            .then(({ body }) => {
+                // Check returned POST data is what we expect
+                expect(body.comment.comment_id).toBe(19);
+                expect(body.comment.body).toBe(postReq.body);
+                expect(body.comment.article_id).toBe(articleId);
+                expect(body.comment.author).toBe(postReq.username);
+                expect(body.comment.votes).toBe(0);
+                expect(typeof body.comment.created_at).toBe("string");
+                return body;
+            })
+            .then((body) => {
+                // Check returned POST data has been added to database
+                return db
+                    .query(`SELECT * FROM comments where comment_id = 19`)
+                    .then(({ rows }) => {
+                        const inDatabase = rows[0];
+                        const fromRequest = body.comment;
+
+                        expect(fromRequest.comment_id).toBe(
+                            inDatabase.comment_id
+                        );
+                        expect(fromRequest.body).toBe(inDatabase.body);
+                        expect(fromRequest.article_id).toBe(
+                            inDatabase.article_id
+                        );
+                        expect(fromRequest.author).toBe(inDatabase.author);
+                        expect(fromRequest.votes).toBe(inDatabase.votes);
+
+                        // As *created_at* is stored in the database as a date variable
+                        // converting data to Date format is required for
+                        // accurate comparison
+                        expect(Date(fromRequest.created_at)).toBe(
+                            Date(inDatabase.created_at)
+                        );
+                    });
+            });
+    });
+    test("status: 400, returns an error and status msg if given article_id is not a number", () => {
+        const notANumber = "string";
+        const postReq = {
+            username: "lurker",
+            body: "Article does not exist.",
+        };
+
+        return request(app)
+            .post(`/api/articles/${notANumber}/comments`)
+            .send(postReq)
             .expect(400)
             .then(({ body }) => {
                 expect(body.msg).toBe("ERROR: bad request");
+            });
+    });
+    test("status: 404, returns an error status and msg if given article_id is not in database", () => {
+        const nonExistantArticleId = 543;
+        const postReq = {
+            username: "lurker",
+            body: "Article does not exist.",
+        };
+
+        return request(app)
+            .post(`/api/articles/${nonExistantArticleId}/comments`)
+            .send(postReq)
+            .expect(404)
+            .then(({ body }) => {
+                expect(body.msg).toBe("ERROR: article does not exist");
             });
     });
 });
