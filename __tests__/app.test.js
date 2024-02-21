@@ -85,7 +85,7 @@ describe("GET /api/articles/:article_id", () => {
             .expect(404)
             .then(({ body }) => {
                 expect(body.msg).toBe(
-                    `ERROR: article *${nonExistantArticleId}* does not exist`
+                    `ERROR: article does not exist`
                 );
             });
     });
@@ -176,7 +176,7 @@ describe("GET /api/articles/:article_id/comments", () => {
             .expect(404)
             .then(({ body }) => {
                 expect(body.msg).toBe(
-                    `ERROR: article *${nonExistantId}* does not exist`
+                    `ERROR: article does not exist`
                 );
             });
     });
@@ -258,7 +258,7 @@ describe("POST /api/articles/:article_id/comments", () => {
             .send(postReq)
             .expect(404)
             .then(({ body }) => {
-                expect(body.msg).toBe("ERROR: article does not exist");
+                expect(body.msg).toBe(`ERROR: article does not exist`);
             });
     });
 });
@@ -369,7 +369,7 @@ describe("PATCH /api/articles/:article_id", () => {
             .expect(404)
             .then(({ body }) => {
                 expect(body.msg).toBe(
-                    `ERROR: article *${nonExistantArticleId}* does not exist`
+                    `ERROR: article does not exist`
                 );
             });
     });
@@ -383,7 +383,7 @@ describe("DELETE /api/comments/:comment_id", () => {
             .delete(`/api/comments/${comment_id}`)
             .expect(204)
             .then(({ body }) => {
-                expect(body).toEqual({})
+                expect(body).toEqual({});
                 return db
                     .query("SELECT * FROM comments WHERE comment_id = $1", [
                         comment_id,
@@ -407,28 +407,39 @@ describe("DELETE /api/comments/:comment_id", () => {
         const nonExistantCommentId = 543;
 
         return request(app)
-        .delete(`/api/comments/${nonExistantCommentId}`)
-        .expect(404)
-        .then(({body}) => {
-            expect(body.msg).toBe("ERROR: comment does not exist")
-        })
+            .delete(`/api/comments/${nonExistantCommentId}`)
+            .expect(404)
+            .then(({ body }) => {
+                expect(body.msg).toBe("ERROR: comment does not exist");
+            });
     });
 });
 
 describe("GET /api/users", () => {
     test("status: 200, returns an array of all user objects", () => {
         return request(app)
-        .get(`/api/users`)
-        .expect(200)
-        .then(({body}) => {
-            console.log(body.users)
-            expect(Array.isArray(body.users)).toBe(true)
-            expect(body.users).toHaveLength(4);
-            body.users.forEach((user) => {
-                expect(typeof user.username).toBe('string');
-                expect(typeof user.name).toBe('string');
-                expect(typeof user.avatar_url).toBe('string')
-            })
-        })
-    })
-})
+            .get(`/api/users`)
+            .expect(200)
+            .then(({ body }) => {
+                expect(Array.isArray(body.users)).toBe(true);
+                expect(body.users).toHaveLength(4);
+                body.users.forEach((user) => {
+                    expect(typeof user.username).toBe("string");
+                    expect(typeof user.name).toBe("string");
+                    expect(typeof user.avatar_url).toBe("string");
+                });
+            });
+    });
+});
+
+describe("FEATURE (query article by topic): GET /api/articles?topic=", () => {
+    test("status: 200, returns an array of all articles with given topic", () => {
+        const topic = "mitch";
+        return request(app)
+            .get(`/api/articles?topic=${topic}`)
+            .expect(200)
+            .then(({ body }) => {
+                expect(body.articles).toHaveLength(12);
+            });
+    });
+});
