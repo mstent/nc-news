@@ -12,8 +12,9 @@ const {
 const {
     getCommentsByArticleId,
     postComment,
-    deleteCommentByCommentId
+    deleteCommentByCommentId,
 } = require(`${__dirname}/controllers/comments.controllers`);
+const { getUsers } = require(`${__dirname}/controllers/users.controllers`);
 
 app.use(express.json());
 
@@ -24,7 +25,8 @@ app.get("/api/articles/:article_id", getArticleById);
 app.get("/api/articles/:article_id/comments", getCommentsByArticleId);
 app.post("/api/articles/:article_id/comments", postComment);
 app.patch("/api/articles/:article_id", patchArticleVotes);
-app.delete("/api/comments/:comment_id", deleteCommentByCommentId)
+app.delete("/api/comments/:comment_id", deleteCommentByCommentId);
+app.get("/api/users", getUsers);
 
 app.use((err, req, res, next) => {
     if (err.code === "22P02") {
