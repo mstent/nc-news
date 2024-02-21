@@ -334,31 +334,31 @@ describe("PATCH /api/articles/:article_id", () => {
                 expect(body.msg).toBe("ERROR: bad request");
             });
     });
-    test('status: 400, returns an error status and msg if given vote update is not a valid number', () => {
+    test("status: 400, returns an error status and msg if given vote update is not a valid number", () => {
         const article_id = 1;
-        const notANumber = 'string'
-        const voteUpdate = {inc_votes: notANumber};
+        const notANumber = "string";
+        const voteUpdate = { inc_votes: notANumber };
 
         return request(app)
-        .patch(`/api/articles/${article_id}`)
-        .send(voteUpdate)
-        .expect(400)
-        .then(({body}) => {
-            expect(body.msg).toBe("ERROR: bad request")
-        })
-    })
-    test('status: 400, returns error status and msg if PATCH body in wrong format (does not include inc_vote key)', () => {
+            .patch(`/api/articles/${article_id}`)
+            .send(voteUpdate)
+            .expect(400)
+            .then(({ body }) => {
+                expect(body.msg).toBe("ERROR: bad request");
+            });
+    });
+    test("status: 400, returns error status and msg if PATCH body in wrong format (does not include inc_vote key)", () => {
         const article_id = 1;
-        const invalidVote = {votes: 4}; // valid key is inc_votes
+        const invalidVote = { votes: 4 }; // valid key is inc_votes
 
         return request(app)
-        .patch(`/api/articles/${article_id}`)
-        .send(invalidVote)
-        .expect(400)
-        .then(({body}) => {
-            expect(body.msg).toBe("ERROR: bad request")
-        })
-    })
+            .patch(`/api/articles/${article_id}`)
+            .send(invalidVote)
+            .expect(400)
+            .then(({ body }) => {
+                expect(body.msg).toBe("ERROR: bad request");
+            });
+    });
     test("status: 404, returns an error status and msg if given article_id is not in database", () => {
         const nonExistantArticleId = 543;
         const voteUpdate = { inc_votes: 3 };
@@ -368,7 +368,49 @@ describe("PATCH /api/articles/:article_id", () => {
             .send(voteUpdate)
             .expect(404)
             .then(({ body }) => {
-                expect(body.msg).toBe(`ERROR: article *${nonExistantArticleId}* does not exist`);
+                expect(body.msg).toBe(
+                    `ERROR: article *${nonExistantArticleId}* does not exist`
+                );
             });
+    });
+});
+
+describe("DELETE /api/comments/:comment_id", () => {
+    test("status: 204, deletes a given comment returning no content", () => {
+        const comment_id = 4;
+
+        return request(app)
+            .delete(`/api/comments/${comment_id}`)
+            .expect(204)
+            .then(({ body }) => {
+                expect(body).toEqual({})
+                return db
+                    .query("SELECT * FROM comments WHERE comment_id = $1", [
+                        comment_id,
+                    ])
+                    .then(({ rows }) => {
+                        expect(rows).toHaveLength(0);
+                    });
+            });
+    });
+    test("status: 400, returns an error status and msg if given comment_id is not a number", () => {
+        const notANumber = "string";
+
+        return request(app)
+            .delete(`/api/comments/${notANumber}`)
+            .expect(400)
+            .then(({ body }) => {
+                expect(body.msg).toBe("ERROR: bad request");
+            });
+    });
+    test("status: 404, returns an error status and msg if given comment_id is not in database", () => {
+        const nonExistantCommentId = 543;
+
+        return request(app)
+        .delete(`/api/comments/${nonExistantCommentId}`)
+        .expect(404)
+        .then(({body}) => {
+            expect(body.msg).toBe("ERROR: comment does not exist")
+        })
     });
 });

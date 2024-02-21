@@ -100,5 +100,10 @@
                 "article_img_url": "https://images.imagewebsite.com/34242/image4example"
             }
         }
+    },
+    "DElELTE /api/comments/:comment_id" : {
+        "description" : "deletes a comment by given comment_id parameter",
+        "queries" : [],
+        "exampleResponse" : {}
     }
 }
