@@ -82,5 +82,23 @@
                 "article_id": 1
             }
         }
+    },
+    "PATCH /api/articles/:article_id": {
+        "description": "updates an articles votes property by given amount",
+        "queries": [],
+        "exampleSend": {
+            "inc_votes": 50
+        },
+        "exampleResponse" : {
+            "article" : {
+                "article_id": 44,
+                "author": "TommyDude",
+                "title": "Too many dudes",
+                "body": "I have decided that there are too many dudes out there trying to steal my style.",
+                "created_at": "2018-05-30T15:59:13.341Z",
+                "votes": 52,
+                "article_img_url": "https://images.imagewebsite.com/34242/image4example"
+            }
+        }
     }
 }
