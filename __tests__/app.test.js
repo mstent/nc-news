@@ -4,6 +4,7 @@ const testData = require(`${__dirname}/../db/data/test-data/`);
 const request = require("supertest");
 const app = require(`${__dirname}/../app`);
 const fs = require("fs/promises");
+const { init } = require("../app");
 
 // Seed database with test data before each test.
 beforeEach(() => {
@@ -258,6 +259,116 @@ describe("POST /api/articles/:article_id/comments", () => {
             .expect(404)
             .then(({ body }) => {
                 expect(body.msg).toBe("ERROR: article does not exist");
+            });
+    });
+});
+
+describe("PATCH /api/articles/:article_id", () => {
+    test("status: 200, increased vote count returned in updated article object", () => {
+        const article_id = 3;
+        const voteUpdate = { inc_votes: 5 };
+
+        return request(app)
+            .patch(`/api/articles/${article_id}`)
+            .send(voteUpdate)
+            .expect(200)
+            .then(({ body }) => {
+                expect(body.article.article_id).toBe(article_id);
+                expect(typeof body.article.title).toBe("string");
+                expect(typeof body.article.topic).toBe("string");
+                expect(typeof body.article.author).toBe("string");
+                expect(typeof body.article.body).toBe("string");
+                expect(typeof body.article.created_at).toBe("string");
+                expect(typeof body.article.article_img_url).toBe("string");
+                expect(body.article.votes).toBe(voteUpdate.inc_votes);
+            });
+    });
+    test("status: 200, decreases vote count in database when given negative amount and returns updated article object", () => {
+        const article_id = 1;
+        const negativeVotes = -3;
+        const voteUpdate = { inc_votes: negativeVotes };
+
+        // querying database before patch request
+        return db
+            .query(`SELECT votes FROM articles WHERE article_id = $1`, [
+                article_id,
+            ])
+            .then((data) => {
+                // initial vote count in databse before PATCH request
+                const initialVotes = data.rows[0].votes;
+                return initialVotes;
+            })
+
+            .then((initialVotes) => {
+                // PATCH request
+                return request(app)
+                    .patch(`/api/articles/${article_id}`)
+                    .send(voteUpdate)
+                    .expect(200)
+                    .then(({ body }) => {
+                        expect(body.article.article_id).toBe(article_id);
+                        expect(typeof body.article.title).toBe("string");
+                        expect(typeof body.article.topic).toBe("string");
+                        expect(typeof body.article.author).toBe("string");
+                        expect(typeof body.article.body).toBe("string");
+                        expect(typeof body.article.created_at).toBe("string");
+                        expect(typeof body.article.article_img_url).toBe(
+                            "string"
+                        );
+                        // expect votes to be initial votes plus the negative votes patch update
+                        expect(body.article.votes).toBe(
+                            initialVotes + negativeVotes
+                        );
+                    });
+            });
+    });
+    test("status: 400, returns an error status and msg if given article_id is not a number", () => {
+        const notANumber = "string";
+        const voteUpdate = { inc_votes: 5 };
+
+        return request(app)
+            .patch(`/api/articles/${notANumber}`)
+            .send(voteUpdate)
+            .expect(400)
+            .then(({ body }) => {
+                expect(body.msg).toBe("ERROR: bad request");
+            });
+    });
+    test('status: 400, returns an error status and msg if given vote update is not a valid number', () => {
+        const article_id = 1;
+        const notANumber = 'string'
+        const voteUpdate = {inc_votes: notANumber};
+
+        return request(app)
+        .patch(`/api/articles/${article_id}`)
+        .send(voteUpdate)
+        .expect(400)
+        .then(({body}) => {
+            expect(body.msg).toBe("ERROR: bad request")
+        })
+    })
+    test('status: 400, returns error status and msg if PATCH body in wrong format (does not include inc_vote key)', () => {
+        const article_id = 1;
+        const invalidVote = {votes: 4}; // valid key is inc_votes
+
+        return request(app)
+        .patch(`/api/articles/${article_id}`)
+        .send(invalidVote)
+        .expect(400)
+        .then(({body}) => {
+            expect(body.msg).toBe("ERROR: bad request")
+        })
+    })
+    test("status: 404, returns an error status and msg if given article_id is not in database", () => {
+        const nonExistantArticleId = 543;
+        const voteUpdate = { inc_votes: 3 };
+
+        return request(app)
+            .patch(`/api/articles/${nonExistantArticleId}`)
+            .send(voteUpdate)
+            .expect(404)
+            .then(({ body }) => {
+                expect(body.msg).toBe(`ERROR: article *${nonExistantArticleId}* does not exist`);
             });
     });
 });
