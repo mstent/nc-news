@@ -1,3 +1,5 @@
+const { inTopicList } = require("../models/topics.model");
+
 const {
     selectArticleById,
     selectArticles,
@@ -14,24 +16,29 @@ exports.getArticleById = (req, res, next) => {
 };
 
 exports.getArticles = (req, res, next) => {
-    selectArticles()
-        .then((articles) => {
-            res.status(200).send({ articles });
+    const { topic } = req.query;
+    const promises = [
+        inTopicList(topic),
+        selectArticles(topic)
+    ]
+    Promise.all(promises)
+        .then((returnedPromises) => {
+            res.status(200).send({ articles: returnedPromises[1] });
         })
-        .catch(next);
+        .catch(next)
 };
 
 exports.patchArticleVotes = (req, res, next) => {
     const { article_id } = req.params;
-    const {inc_votes}  = req.body;
+    const { inc_votes } = req.body;
 
     const promises = [
         updateArticleVotes(article_id, inc_votes),
-        selectArticleById(article_id)
-    ]
+        selectArticleById(article_id),
+    ];
     Promise.all(promises)
-    .then((data) => {
-        res.status(200).send({article: data[0]})
-    })
-    .catch(next)
+        .then((data) => {
+            res.status(200).send({ article: data[0] });
+        })
+        .catch(next);
 };
