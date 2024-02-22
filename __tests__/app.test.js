@@ -435,11 +435,32 @@ describe("GET /api/users", () => {
 describe("FEATURE (query article by topic): GET /api/articles?topic=", () => {
     test("status: 200, returns an array of all articles with given topic", () => {
         const topic = "mitch";
+        const numbOfArticlesWithTopic = 12;
         return request(app)
             .get(`/api/articles?topic=${topic}`)
             .expect(200)
             .then(({ body }) => {
-                expect(body.articles).toHaveLength(12);
+                expect(body.articles).toHaveLength(numbOfArticlesWithTopic);
+                body.articles.forEach((article) => {
+                    expect(typeof article.author).toBe("string");
+                    expect(typeof article.title).toBe("string");
+                    expect(typeof article.article_id).toBe("number");
+                    expect(typeof article.topic).toBe("string");
+                    expect(typeof article.created_at).toBe("string");
+                    expect(typeof article.votes).toBe("number");
+                    expect(typeof article.article_img_url).toBe("string");
+                    expect(typeof article.comment_count).toBe("number");
+                })
             });
     });
+    test("status: 404, reuturns an error status and msg if topic does not exist", () => {
+        const nonExiststantTopic = 'forklifts';
+        return request(app)
+        .get(`/api/articles?topic=${nonExiststantTopic}`)
+        .expect(404)
+        .then(({body}) => {
+            expect(body.msg).toBe("ERROR: topic does not exist")
+        })
+    })
+    
 });

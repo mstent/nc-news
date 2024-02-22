@@ -23,7 +23,7 @@ exports.selectArticles = (topic = "") => {
         articles.created_at,
         articles.votes,
         articles.article_img_url,
-        COUNT(comments.comment_id) AS comment_count
+        CAST(COUNT(comments.comment_id)AS int) AS comment_count
     FROM
         articles
     LEFT JOIN
@@ -32,7 +32,7 @@ exports.selectArticles = (topic = "") => {
         articles.article_id = comments.article_id`;
 
     if (topic) {
-        dbQuery += ` WHERE topic = '${topic}' `
+        dbQuery += ` WHERE topic = '${topic}' `;
     }
 
     dbQuery += `
@@ -44,14 +44,10 @@ exports.selectArticles = (topic = "") => {
             articles.created_at,
             articles.votes,
             articles.article_img_url
-        ORDER BY articles.created_at DESC`
-
-        console.log(dbQuery)
-    return db
-        .query(dbQuery)
-        .then((databaseQuery) => {
-            return databaseQuery.rows;
-        });
+        ORDER BY articles.created_at DESC`;
+    return db.query(dbQuery).then((databaseQuery) => {
+        return databaseQuery.rows;
+    });
 };
 
 exports.updateArticleVotes = (article_id, inc_votes) => {
