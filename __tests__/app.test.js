@@ -60,13 +60,14 @@ describe("GET /api/articles/:article_id", () => {
                     "article_id",
                     givenParameter // checks the recieved article_id is the given parameter.
                 );
-                expect(body.article).toHaveProperty("author");
-                expect(body.article).toHaveProperty("title");
-                expect(body.article).toHaveProperty("body");
-                expect(body.article).toHaveProperty("topic");
-                expect(body.article).toHaveProperty("created_at");
-                expect(body.article).toHaveProperty("votes");
-                expect(body.article).toHaveProperty("article_img_url");
+                expect(typeof body.article.author).toBe("string");
+                expect(typeof body.article.title).toBe("string");
+                expect(typeof body.article.body).toBe("string");
+                expect(typeof body.article.topic).toBe("string");
+                expect(typeof body.article.created_at).toBe("string");
+                expect(typeof body.article.votes).toBe("number");
+                expect(typeof body.article.article_img_url).toBe("string");
+                expect(typeof body.article.comment_count).toBe('number')
             });
     });
     test("status: 400, returns status error and msg if given parameter is not a number", () => {
@@ -280,6 +281,7 @@ describe("PATCH /api/articles/:article_id", () => {
                 expect(typeof body.article.body).toBe("string");
                 expect(typeof body.article.created_at).toBe("string");
                 expect(typeof body.article.article_img_url).toBe("string");
+                expect(typeof body.article.comment_count).toBe('number')
                 expect(body.article.votes).toBe(voteUpdate.inc_votes);
             });
     });
@@ -315,6 +317,8 @@ describe("PATCH /api/articles/:article_id", () => {
                         expect(typeof body.article.article_img_url).toBe(
                             "string"
                         );
+                        expect(typeof body.article.comment_count).toBe('number')
+                        
                         // expect votes to be initial votes plus the negative votes patch update
                         expect(body.article.votes).toBe(
                             initialVotes + negativeVotes
