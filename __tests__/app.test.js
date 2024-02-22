@@ -457,6 +457,16 @@ describe("FEATURE (query article by topic): GET /api/articles?topic=", () => {
                 })
             });
     });
+    test("status: 200, returns an empty array for a topic which exists but has no articles", () => {
+        const validTopicWithNoArticles = 'paper'
+        const emptyArray = []
+        return request(app)
+        .get(`/api/articles?topic=${validTopicWithNoArticles}`)
+        .expect(200)
+        .then(({body}) => {
+            expect(body.articles).toEqual(emptyArray)
+        })
+    })
     test("status: 404, reuturns an error status and msg if topic does not exist", () => {
         const nonExiststantTopic = 'forklifts';
         return request(app)
