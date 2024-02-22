@@ -2,7 +2,8 @@ const db = require(`${__dirname}/../db/connection`);
 
 exports.selectArticleById = (article_id) => {
     return db
-        .query(`SELECT
+        .query(
+            `SELECT
             articles.article_id,
             articles.author,
             articles.title,
@@ -29,7 +30,9 @@ exports.selectArticleById = (article_id) => {
             articles.created_at,
             articles.votes,
             articles.article_img_url
-            `, [article_id])
+            `,
+            [article_id]
+        )
         .then((databaseQuery) => {
             if (databaseQuery.rows.length === 0) {
                 return Promise.reject({
@@ -41,7 +44,30 @@ exports.selectArticleById = (article_id) => {
         });
 };
 
-exports.selectArticles = (topic = "") => {
+exports.selectArticles = (topic = "", sort_by = "created_at", order = 'DESC') => {
+    const columns = [
+        "author",
+        "title",
+        "topic",
+        "created_at",
+        "votes",
+        "article_img_url",
+        "comment_count",
+    ];
+    if (!columns.includes(sort_by)) {
+        return Promise.reject({
+            status: 400,
+            msg: "ERROR: invalid sort query",
+        });
+    }
+    if (columns.slice(0, -1).includes(sort_by)) {
+        sort_by = `articles.${sort_by}`;
+    }
+
+    if (!['ASC', 'DESC'].includes(order.toUpperCase())) {
+        return Promise.reject({status: 400, msg: 'ERROR: invalid order query'})
+    }
+
     let dbQuery = `SELECT
         articles.author,
         articles.title,
@@ -71,7 +97,7 @@ exports.selectArticles = (topic = "") => {
             articles.created_at,
             articles.votes,
             articles.article_img_url
-        ORDER BY articles.created_at DESC`;
+        ORDER BY ${sort_by} ${order}`;
     return db.query(dbQuery).then((databaseQuery) => {
         return databaseQuery.rows;
     });
@@ -88,6 +114,6 @@ exports.updateArticleVotes = (article_id, inc_votes) => {
             [inc_votes, article_id]
         )
         .then(() => {
-            return this.selectArticleById(article_id)
+            return this.selectArticleById(article_id);
         });
 };

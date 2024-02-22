@@ -478,3 +478,62 @@ describe("FEATURE (query article by topic): GET /api/articles?topic=", () => {
     })
     
 });
+
+describe("FEATURE (sorting queries): GET /api/articles?sort_by=&order=", () => {
+    test("status: 200, sorts articles by any valid column if given valid sort_by query and defaults to descending order", () => {
+        const validColumn = 'comment_count';
+        return request(app)
+        .get(`/api/articles?sort_by=${validColumn}`)
+        .expect(200)
+        .then(({body}) => {
+            expect(body.articles).toBeSortedBy(validColumn, {descending: true});
+        })
+    })
+    test("status 200, returns articles in ascending order when passed valid ascending order query", () => {
+        const ascOrderQuery = '?order=asc';
+        return request(app)
+        .get(`/api/articles${ascOrderQuery}`)
+        .expect(200)
+        .then(({body}) => {
+            expect(body.articles).toBeSortedBy('created_at', {descending: false})
+        })
+    })
+    test("status 200, returns articles in descending order when passed valid descending order query", () => {
+        const descOrderQuery = '?order=desc';
+        return request(app)
+        .get(`/api/articles${descOrderQuery}`)
+        .expect(200)
+        .then(({body}) => {
+            expect(body.articles).toBeSortedBy('created_at', {descending: true})
+        })
+    })
+    test("status 200, can return articles in ascending order sorted by a valid column", () => {
+        const validSortQuery = 'sort_by=author'
+        const ascOrderQuery = 'order=asc';
+        return request(app)
+        .get(`/api/articles?${validSortQuery}&${ascOrderQuery}`)
+        .expect(200)
+        .then(({body}) => {
+            console.log(body.articles)
+            expect(body.articles).toBeSortedBy('author', {descending: false})
+        })
+    })
+    test("status: 400, returns an error status and msg if sort_by query is not a valid column in the database", () => {
+        const nonValidColumn = 'forklift_count';
+        return request(app)
+        .get(`/api/articles?sort_by=${nonValidColumn}`)
+        .expect(400)
+        .then(({body}) => {
+            expect(body.msg).toBe("ERROR: invalid sort query")
+        })
+    })
+    test("status: 400, returns an error status and msg if order by query is invalid", () => {
+        const nonValidOrderQuery = 'ascending'  // valid order query is asc (or ASC)
+        return request(app)
+        .get(`/api/articles?order=${nonValidOrderQuery}`)
+        .expect(400)
+        .then(({body}) => {
+            expect(body.msg).toBe("ERROR: invalid order query")
+        })
+    })
+})
