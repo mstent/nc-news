@@ -16,10 +16,10 @@ exports.getArticleById = (req, res, next) => {
 };
 
 exports.getArticles = (req, res, next) => {
-    const { topic } = req.query;
+    const { topic, sort_by, order} = req.query;
     const promises = [
         inTopicList(topic),
-        selectArticles(topic)
+        selectArticles(topic, sort_by, order)
     ]
     Promise.all(promises)
         .then((returnedPromises) => {
