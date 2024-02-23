@@ -514,7 +514,6 @@ describe("FEATURE (sorting queries): GET /api/articles?sort_by=&order=", () => {
         .get(`/api/articles?${validSortQuery}&${ascOrderQuery}`)
         .expect(200)
         .then(({body}) => {
-            console.log(body.articles)
             expect(body.articles).toBeSortedBy('author', {descending: false})
         })
     })
