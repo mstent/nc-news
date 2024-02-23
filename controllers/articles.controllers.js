@@ -16,14 +16,14 @@ exports.getArticleById = (req, res, next) => {
 };
 
 exports.getArticles = (req, res, next) => {
-    const { topic, sort_by, order} = req.query;
+    const { topic, sort_by, order, limit, p} = req.query;
     const promises = [
         inTopicList(topic),
-        selectArticles(topic, sort_by, order)
+        selectArticles(topic, sort_by, order, limit, p)
     ]
     Promise.all(promises)
         .then((returnedPromises) => {
-            res.status(200).send({ articles: returnedPromises[1] });
+            res.status(200).send({ articles: returnedPromises[1].articles, total_count:  returnedPromises[1].total_count});
         })
         .catch(next)
 };

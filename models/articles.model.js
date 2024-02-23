@@ -44,9 +44,10 @@ exports.selectArticleById = (article_id) => {
         });
 };
 
-exports.selectArticles = (topic = "", sort_by = "created_at", order = 'DESC') => {
+exports.selectArticles = (topic = "", sort_by = "created_at", order = 'DESC', limit = 10, p = 1) => {
     const columns = [
         "author",
+        "article_id",
         "title",
         "topic",
         "created_at",
@@ -97,11 +98,35 @@ exports.selectArticles = (topic = "", sort_by = "created_at", order = 'DESC') =>
             articles.created_at,
             articles.votes,
             articles.article_img_url
-        ORDER BY ${sort_by} ${order}`;
+        ORDER BY ${sort_by} ${order}`
     return db.query(dbQuery).then((databaseQuery) => {
-        return databaseQuery.rows;
+        return pageLimiter(limit, p,databaseQuery.rows)
     });
 };
+
+function pageLimiter(limit, p, articlesArray) {
+    if (!(limit > 0) && limit !== 'null') {
+        return Promise.reject({status:400, msg: "ERROR: invalid limit query"})
+    }
+    const total_count = articlesArray.length;
+    
+    if (total_count === 0) {
+        return {articles: articlesArray, total_count: total_count}
+    }
+    
+    const startIndex =  (p * limit) - (limit -1) -1;
+    
+    if (!(startIndex < total_count) && limit !== 'null') {
+        return Promise.reject({status: 400, msg: "ERROR: invalid p query"})
+    }
+
+    if (limit >= total_count || limit === 'null') {
+        return {articles: articlesArray, total_count: total_count}
+    } else {
+        return {articles: articlesArray.slice(startIndex ,Number(startIndex) + Number(limit)), total_count: total_count}
+    }
+
+}
 
 exports.updateArticleVotes = (article_id, inc_votes) => {
     return db

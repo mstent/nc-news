@@ -4,7 +4,6 @@ const testData = require(`${__dirname}/../db/data/test-data/`);
 const request = require("supertest");
 const app = require(`${__dirname}/../app`);
 const fs = require("fs/promises");
-const { init } = require("../app");
 
 // Seed database with test data before each test.
 beforeEach(() => {
@@ -94,8 +93,9 @@ describe("GET /api/articles/:article_id", () => {
 
 describe("GET /api/articles", () => {
     test("status: 200, returns an array of all article objects orderd by date", () => {
+        const ignorePagination = '?limit=null'
         return request(app)
-            .get("/api/articles")
+            .get(`/api/articles${ignorePagination}`)
             .expect(200)
             .then(({ body }) => {
                 expect(body.articles.length).toBe(13);
@@ -440,8 +440,9 @@ describe("FEATURE (query article by topic): GET /api/articles?topic=", () => {
     test("status: 200, returns an array of all articles with given topic", () => {
         const topic = "mitch";
         const numbOfArticlesWithTopic = 12;
+        const ignorePagination = 'limit=null'
         return request(app)
-            .get(`/api/articles?topic=${topic}`)
+            .get(`/api/articles?topic=${topic}&${ignorePagination}`)
             .expect(200)
             .then(({ body }) => {
                 expect(body.articles).toHaveLength(numbOfArticlesWithTopic);
@@ -489,7 +490,7 @@ describe("FEATURE (sorting queries): GET /api/articles?sort_by=&order=", () => {
             expect(body.articles).toBeSortedBy(validColumn, {descending: true});
         })
     })
-    test("status 200, returns articles in ascending order when passed valid ascending order query", () => {
+    test("status: 200, returns articles in ascending order when passed valid ascending order query", () => {
         const ascOrderQuery = '?order=asc';
         return request(app)
         .get(`/api/articles${ascOrderQuery}`)
@@ -498,7 +499,7 @@ describe("FEATURE (sorting queries): GET /api/articles?sort_by=&order=", () => {
             expect(body.articles).toBeSortedBy('created_at', {descending: false})
         })
     })
-    test("status 200, returns articles in descending order when passed valid descending order query", () => {
+    test("status: 200, returns articles in descending order when passed valid descending order query", () => {
         const descOrderQuery = '?order=desc';
         return request(app)
         .get(`/api/articles${descOrderQuery}`)
@@ -507,7 +508,7 @@ describe("FEATURE (sorting queries): GET /api/articles?sort_by=&order=", () => {
             expect(body.articles).toBeSortedBy('created_at', {descending: true})
         })
     })
-    test("status 200, can return articles in ascending order sorted by a valid column", () => {
+    test("status: 200, can return articles in ascending order sorted by a valid column", () => {
         const validSortQuery = 'sort_by=author'
         const ascOrderQuery = 'order=asc';
         return request(app)
@@ -535,4 +536,83 @@ describe("FEATURE (sorting queries): GET /api/articles?sort_by=&order=", () => {
             expect(body.msg).toBe("ERROR: invalid order query")
         })
     })
+})
+
+describe("FEATURE (pagination: GET /api/articles", () => {
+    test("status: 200, limits object responses amount to given limit and returns total number of overall objects", () => {
+        const limit = 3;
+        return request(app)
+        .get(`/api/articles?limit=${limit}`)
+        .expect(200)
+        .then(({body}) => {
+            expect(body.articles).toHaveLength(limit)
+            expect(body.total_count).toBe(13)
+        })
+    })
+    test("status: 200, defaults to limiting to 10 items if not passed a limit query", () => {
+        return request(app)
+        .get(`/api/articles`)
+        .expect(200)
+        .then(({body}) => {
+            expect(body.articles).toHaveLength(10)
+        })
+    })
+    test("status: 200, passed ?p= query determines which 'page' to start at", () => {
+        const limitQuery = 5;
+        const pageToStartAt = 2;
+        const sortBy = 'article_id'
+        return request(app)
+        .get(`/api/articles?sort_by=${sortBy}&order=asc&limit=${limitQuery}&p=${pageToStartAt}`)
+        .expect(200)
+        .then(({body}) => {
+            expect(body.articles).toHaveLength(5)
+            expect(body.articles[0]).toHaveProperty('article_id', 6)
+            expect(body.articles[1]).toHaveProperty('article_id', 7)
+            expect(body.articles[2]).toHaveProperty('article_id', 8)
+            expect(body.articles[3]).toHaveProperty('article_id', 9)
+            expect(body.articles[4]).toHaveProperty('article_id', 10)
+            expect(body.total_count).toBe(13)
+        })
+    })
+    test("status: 400, returns an error status and msg if p query is too high for viable amount of pages based on limiter", () => {
+        const invalidPQuery = 4;
+        const limit = 5;
+        const sortBy = 'article_id';
+        return request(app)
+        .get(`/api/articles?sort_by=${sortBy}&order=asc&limit=${limit}&p=${invalidPQuery}`)
+        .expect(400)
+        .then(({body}) => {
+            expect(body.msg).toBe("ERROR: invalid p query")
+        })
+    })
+    test("status: 400, returns an error status and msg if p query in not a number", () => {
+        const notANumber = 'string'
+        const limit = 5;
+        const sortBy = 'article_id';
+        return request(app)
+        .get(`/api/articles?sort_by=${sortBy}&order=asc&limit=${limit}&p=${notANumber}`)
+        .expect(400)
+        .then(({body}) => {
+            expect(body.msg).toBe("ERROR: invalid p query")
+        })
+    })
+    test("status: 400, returns an error status and msg if limit is not a number", () => {
+        const notANumber = 'string'
+        return request(app)
+        .get(`/api/articles?limit=${notANumber}`)
+        .expect(400)
+        .then(({body}) => {
+            expect(body.msg).toBe('ERROR: invalid limit query')
+        })
+    })
+    test("status: 400, returns an error status and msg if limit is a negative number", () => {
+        const negativeumber = -5
+        return request(app)
+        .get(`/api/articles?limit=${negativeumber}`)
+        .expect(400)
+        .then(({body}) => {
+            expect(body.msg).toBe('ERROR: invalid limit query')
+        })
+    })
+    
 })
